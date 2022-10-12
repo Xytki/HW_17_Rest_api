@@ -50,12 +50,16 @@ class Genre(db.Model):
 class MovieViews(Resource):
     def get(self):
         all_movies = Movie.query.all()
+        page = request.args.get('page')
 
         if director_id := request.args.get('director_id'):
             all_movies = db.session.query(Movie).filter(Movie.director_id == director_id)
 
         if genre_id := request.args.get('genre_id'):
             all_movies = db.session.query(Movie).filter(Movie.genre_id == genre_id)
+
+        if page:
+            all_movies = db.session.query(Movie).paginate(int(page), 2).items
 
         return movie_schemas.dump(all_movies), 200
 
@@ -67,14 +71,6 @@ class MovieViews(Resource):
             db.session.add(new_info)
 
         return '', 201
-
-    def delete(self, bid: int):
-        movie = db.session.query(Movie).get(bid)
-
-        db.session.delete(movie)
-        db.session.commit()
-
-        return '', 204
 
 
 @movie_ns.route("/<int:bid>")
@@ -100,6 +96,14 @@ class MovieViews(Resource):
             db.session.rollback()
             return e, 404
 
+    def delete(self, bid: int):
+        movie = db.session.query(Movie).get(bid)
+
+        db.session.delete(movie)
+        db.session.commit()
+
+        return '', 204
+
 
 genre_ns = api.namespace("genres")
 genre_schemas = GenreSchema(many=True)
@@ -122,21 +126,13 @@ class GenreViews(Resource):
 
         return '', 201
 
-    def delete(self, bid: int):
-        genre_ = db.session.query(Genre).get(bid)
-
-        db.session.delete(genre_)
-        db.session.commit()
-
-        return '', 204
-
 
 @genre_ns.route("/<int:bid>")
 class GenreViews(Resource):
     def get(self, bid: int):
         try:
             genre_ = Genre.query.get(bid)
-            return movie_schema.dump(genre_), 200
+            return genre_schema.dump(genre_), 200
 
         except Exception as e:
             return '', 404
@@ -154,6 +150,14 @@ class GenreViews(Resource):
             print(e)
             db.session.rollback()
             return e, 404
+
+    def delete(self, bid: int):
+        genre_ = db.session.query(Genre).get(bid)
+
+        db.session.delete(genre_)
+        db.session.commit()
+
+        return '', 204
 
 
 directors_ns = api.namespace("directors")
@@ -177,21 +181,13 @@ class DirectorsViews(Resource):
 
         return '', 201
 
-    def delete(self, bid: int):
-        genre_ = db.session.query(Director).get(bid)
-
-        db.session.delete(genre_)
-        db.session.commit()
-
-        return '', 204
-
 
 @directors_ns.route("/<int:bid>")
 class DirectorsViews(Resource):
     def get(self, bid: int):
         try:
             genre_ = Director.query.get(bid)
-            return movie_schema.dump(genre_), 200
+            return director_schema.dump(genre_), 200
         except Exception as e:
             return '', 404
 
@@ -208,6 +204,14 @@ class DirectorsViews(Resource):
             print(e)
             db.session.rollback()
             return e, 404
+
+    def delete(self, bid: int):
+        genre_ = db.session.query(Director).get(bid)
+
+        db.session.delete(genre_)
+        db.session.commit()
+
+        return '', 204
 
 
 if __name__ == '__main__':
